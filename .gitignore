@@ -1,0 +1,5 @@
+data/users.json
+data/certs/*.key
+data/certs/*.pem
+__pycache__/
+.venv/
