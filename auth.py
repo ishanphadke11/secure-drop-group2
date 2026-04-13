@@ -1,5 +1,4 @@
 import json
-import os
 import hashlib
 import os
 from crypto import generate_key_pair
@@ -50,11 +49,13 @@ def register_user():
     user_info["cert"] = cert
     save_user(user_info)
 
+# function takes plaintext password and hashes it
 def hash_password(password):
     salt = os.urandom(16).hex()
     hash = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), 600_000).hex()
     return f"{salt}${hash}"
 
+# function takes plaintext password and compares it to the stored hashed password
 def verify_password(password, stored_password):
     salt, hash = stored_password.split("$")
     new_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), bytes.fromhex(salt), 600_000).hex()
@@ -63,3 +64,16 @@ def verify_password(password, stored_password):
     else:
         return False
 
+
+# function to collect login infromation and authenticate user by verifying password
+def login_user():
+    email = input("Enter Email Address: ")
+    password = input("Enter Password: ")
+    user_info = load_user()
+    if user_info["email"] == email and verify_password(password, user_info["password_hash"]):
+        print(f"Welcome, {user_info['name']}.")
+        return True
+
+    else:
+        print("Email and Password combination invalid.")
+        return False
