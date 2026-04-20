@@ -47,6 +47,7 @@ def register_user():
     key, cert = generate_key_pair(user_info["email"], user_info["name"])
     user_info["key"] = key
     user_info["cert"] = cert
+    user_info["encryption_salt"] = os.urandom(16).hex()
     save_user(user_info)
 
 # function takes plaintext password and hashes it
@@ -72,8 +73,13 @@ def login_user():
     user_info = load_user()
     if user_info["email"] == email and verify_password(password, user_info["password_hash"]):
         print(f"Welcome, {user_info['name']}.")
-        return True
+        return {
+            "name": user_info["name"],
+            "email": user_info["email"],
+            "password": password,
+            "encryption_salt": user_info["encryption_salt"]
+        }
 
     else:
         print("Email and Password combination invalid.")
-        return False
+        return None

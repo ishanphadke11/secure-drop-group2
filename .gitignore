@@ -1,4 +1,5 @@
 data/users.json
+data/contacts.json
 data/certs/*.key
 data/certs/*.pem
 __pycache__/
