@@ -52,7 +52,7 @@ def list_contacts(session):
     for user in online_users:
         for contact in contacts:
             if contact["email"] == user["email"]:
-                if session["email"] in user["contactts"]:
+                if session["email"] in user.get("contactts", []):
                     valid.append(user)
                     
     print("The following contacts are online:")
