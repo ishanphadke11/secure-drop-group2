@@ -4,6 +4,7 @@ import os
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
+from network import discover_users
 
 # function takes plaintext password and encryption salt for user to generate aes key. This key is
 # used to encrypt/decrpt contacts.json using Fernet
