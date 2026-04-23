@@ -32,6 +32,8 @@ def commands(session):
         elif command == "add":
             add_contacts(session)
 
+        elif command == "list":
+            list_contacts(session)
 
 
 if __name__ == "__main__":
