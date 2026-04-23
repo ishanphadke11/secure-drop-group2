@@ -1,5 +1,6 @@
 from auth import register_user, is_registered, login_user
-from contacts import add_contacts
+from contacts import add_contacts, list_contacts
+from network import start_listener
 
 
 def main():
@@ -16,7 +17,9 @@ def main():
     session = None
     while session is None:
         session = login_user()
-
+        
+    start_listener()
+    
     commands(session)
 
 def commands(session):
