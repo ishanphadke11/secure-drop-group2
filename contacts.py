@@ -42,3 +42,18 @@ def add_contacts(session):
     contacts.append({"name": name, "email": email})
     save_contacts(contacts, session)
     print("Contact Added")
+
+def list_contacts(session):
+    contacts = load_contacts(session)
+    online_users = discover_users(session)
+    valid = []
+
+    for user in online_users:
+        for contact in contacts:
+            if contact["email"] == user["email"]:
+                if session["email"] in user["contactts"]:
+                    valid.append(user)
+                    
+    print("The following contacts are online:")
+    for v in valid:
+        print(f"* {v['name']} <{v['email']}>")
