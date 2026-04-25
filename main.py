@@ -1,6 +1,6 @@
 from auth import register_user, is_registered, login_user
-from contacts import add_contacts, list_contacts
-from network import start_listener
+from contacts import load_contacts, add_contacts, list_contacts
+from network import start_listener, start_broadcaster
 
 
 def main():
@@ -10,15 +10,17 @@ def main():
         if choice == 'y':
             register_user()
             print("User Registered")
-
+        else:
         print("Exiting SecureDrop")
         return
 
     session = None
     while session is None:
         session = login_user()
-        
+
+    contacts = load_contacts(session)
     start_listener()
+    start_broadcaster(session, contacts)
     
     commands(session)
 
@@ -37,6 +39,10 @@ def commands(session):
 
         elif command == "list":
             list_contacts(session)
+
+        elif command == "exit":
+            print("Exiting SecureDrop")
+            break
 
 
 if __name__ == "__main__":
