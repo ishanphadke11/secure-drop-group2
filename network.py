@@ -10,7 +10,7 @@ PORT = 50000
 def start_listender():
     def listen():
         global ONLINE_USERS
-        s = socket.socket(socket,AF_INET, socket.SOCK_DGRAM)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind(('', PORT))
 
         while True:
@@ -25,17 +25,27 @@ def start_listender():
     thread = threading.Thread(target=listen, daemon=True)
     thread.start()
 
+def start_broadcaster(session, contacts):
+    def loop():
+        while True:
+            broadcast_presence(session, contacts)
+            time.sleep(2)
+    thread = threading.Thread(target=loop, daemon=True)
+    thread.start()
+
 def broadcast_presence(session, contacts():
-    # still need to implement
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     # message
+    message = json.dumps({
+        "email": session["email"],
+        "name": session["name"],
+        "contacts": [c["email"] for c in contacts]
+    }).encode()
     # send message
+    s.sendto(message, ('<broadcast>', PORT))
 
 def discover_users(session, contacts):
-    global ONLINE_USERS
-    ONLINE_USERS = []
     broadcast_presence(session, contacts)
-    # wait for a response
     time.sleep(2)
     return ONLINE_USERS
