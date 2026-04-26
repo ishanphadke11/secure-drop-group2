@@ -1,6 +1,7 @@
 from auth import register_user, is_registered, login_user
 from contacts import load_contacts, add_contacts, list_contacts
 from network import start_listener, start_broadcaster
+from file_transfer import send_file_interface, start_receiver
 
 
 def main():
@@ -20,6 +21,7 @@ def main():
 
     contacts = load_contacts(session)
     start_listener()
+    start_reciever()
     start_broadcaster(session, contacts)
     
     commands(session)
@@ -39,6 +41,17 @@ def commands(session):
 
         elif command == "list":
             list_contacts(session)
+
+        elif command.startswith("send"):
+            parts = command.split()
+            if len(parts) == 3:
+                recipient = parts[1]
+                file_path = parts[2]
+            else:
+                recipient = input("Enter recipient email: ")
+                file_path = input("Enter file path: ")
+
+            send_file_interface(session, recipient, file_path)
 
         elif command == "exit":
             print("Exiting SecureDrop")
