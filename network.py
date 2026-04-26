@@ -31,6 +31,7 @@ def start_broadcaster(session, contacts):
         while True:
             broadcast_presence(session, contacts)
             time.sleep(2)
+            
     thread = threading.Thread(target=loop, daemon=True)
     thread.start()
 
@@ -41,6 +42,7 @@ def broadcast_presence(session, contacts):
     message = json.dumps({
         "email": session["email"],
         "name": session["name"],
+        "ip": socket.gethostbyname(socket.gethostname()),
         "contacts": [c["email"] for c in contacts]
     }).encode()
     # send message
