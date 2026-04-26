@@ -4,3 +4,6 @@ data/certs/*.key
 data/certs/*.pem
 __pycache__/
 .venv/
+*_backup.py
+recieved_*.bin
+received_*.bin
