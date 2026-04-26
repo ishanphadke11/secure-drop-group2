@@ -65,21 +65,26 @@ def verify_password(password, stored_password):
     else:
         return False
 
-
 # function to collect login infromation and authenticate user by verifying password
 def login_user():
     email = input("Enter Email Address: ")
     password = input("Enter Password: ")
-    user_info = load_user()
-    if user_info["email"] == email and verify_password(password, user_info["password_hash"]):
-        print(f"Welcome, {user_info['name']}.")
-        return {
-            "name": user_info["name"],
-            "email": user_info["email"],
-            "password": password,
-            "encryption_salt": user_info["encryption_salt"]
-        }
 
-    else:
-        print("Email and Password combination invalid.")
-        return None
+    users = load_user()
+
+    if isinstance(users, dict):
+        users = [users]
+
+    for user_info in users:
+        if user_info["email"] == email and password != "":
+            if verify_password(password, user_info["password_hash"]):
+                print(f"Welcome, {user_info['name']}.")
+                return {
+                    "name": user_info["name"],
+                    "email": user_info["email"],
+                    "password": password,
+                    "encryption_salt": user_info["encryption_salt"]
+                }
+
+    print("Email and Password Combination Invalid.")
+    return None

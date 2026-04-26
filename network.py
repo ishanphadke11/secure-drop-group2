@@ -4,13 +4,13 @@ import threading
 import time
 
 ONLINE_USERS = []
-
 PORT = 50000
 
-def start_listender():
+
+def start_listener():
     def listen():
         global ONLINE_USERS
-        s = socket.socket(socket,AF_INET, socket.SOCK_DGRAM)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind(('', PORT))
 
         while True:
@@ -20,22 +20,31 @@ def start_listender():
                 if user not in ONLINE_USERS:
                     ONLINE_USERS.append(user)
             except:
-              continue
+                continue
 
     thread = threading.Thread(target=listen, daemon=True)
     thread.start()
 
-def broadcast_presence(session, contacts():
-    # still need to implement
+
+def broadcast_presence(session, contacts):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    # message
-    # send message
 
-def discover_users(session, contacts):
+    message = json.dumps({
+        "name": session["name"],
+        "email": session["email"],
+        "contacts": contacts
+    })
+
+    s.sendto(message.encode(), ('<broadcast>', PORT))
+
+
+def discover_users(session):
     global ONLINE_USERS
     ONLINE_USERS = []
-    broadcast_presence(session, contacts)
-    # wait for a response
+
+    broadcast_presence(session, [])
+
     time.sleep(2)
+
     return ONLINE_USERS
