@@ -37,7 +37,13 @@ def commands(session):
 
         elif command == "list":
             list_contacts(session)
+        
+        elif command == "exit":
+            print("Exiting SecureDrop.")
+            break
 
+        else:
+            print("Unknown command."
 
 if __name__ == "__main__":
     main()

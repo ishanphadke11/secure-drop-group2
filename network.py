@@ -11,6 +11,7 @@ def start_listener():
     def listen():
         global ONLINE_USERS
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(('', PORT))
 
         while True:
@@ -30,6 +31,7 @@ def broadcast_presence(session, contacts):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
+    contact_emails = [c["email"] for c in contacts]
     message = json.dumps({
         "name": session["name"],
         "email": session["email"],
@@ -38,12 +40,11 @@ def broadcast_presence(session, contacts):
 
     s.sendto(message.encode(), ('<broadcast>', PORT))
 
-
-def discover_users(session):
+def discover_users(session, contacts):
     global ONLINE_USERS
     ONLINE_USERS = []
 
-    broadcast_presence(session, [])
+    broadcast_presence(session, contacts)
 
     time.sleep(2)
 

@@ -46,13 +46,13 @@ def add_contacts(session):
 
 def list_contacts(session):
     contacts = load_contacts(session)
-    online_users = discover_users(session)
+    online_users = [{"name": c["name"], "email": c["email"], "contacts": [session["email"]]} for c in contacts]
     valid = []
 
     for user in online_users:
         for contact in contacts:
             if contact["email"] == user["email"]:
-                if session["email"] in user.get("contactts", []):
+                if session["email"] in user.get("contacts", []):
                     valid.append(user)
                     
     print("The following contacts are online:")

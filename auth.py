@@ -15,17 +15,17 @@ def load_user():
         return json.load(file)
 
 # this function is called to write user info from a dictionary to the users.json file
-def save_user(user_info):
+def save_user(user):
     with open("data/users.json", "w") as file:
-        json.dump(user_info, file)
+        json.dump(user, file, indent=4)
 
 # function to collect user's information
 def collect_user_info():
-    name = input("Enter Full Name: ")
-    email = input("Enter Email Address: ")
+    name = input("Enter Full Name: ").strip()
+    email = input("Enter Email Address: ").strip()
 
     while True:
-        password = input("Enter Password: ")
+        password = input("Enter Password: ").strip()
         confirmed_password = input("Re-enter Password: ")
 
         if password == confirmed_password:
@@ -42,13 +42,28 @@ def collect_user_info():
 
 # function to register user
 def register_user():
+    users = load_user()
+    if users is None:
+        users = []
+    elif isinstance(users, dict):
+        users = [users]
+
     user_info = collect_user_info()
+
+    for user in users:
+        if user["email"] == user_info["email"]:
+            print("A user with that email already exists.")
+            return
+
     user_info["password_hash"] = hash_password(user_info.pop("password"))
     key, cert = generate_key_pair(user_info["email"], user_info["name"])
     user_info["key"] = key
     user_info["cert"] = cert
     user_info["encryption_salt"] = os.urandom(16).hex()
-    save_user(user_info)
+
+    users.append(user_info)
+    save_user(users)
+    print("User Registered.")
 
 # function takes plaintext password and hashes it
 def hash_password(password):
