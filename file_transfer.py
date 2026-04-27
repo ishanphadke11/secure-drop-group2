@@ -4,12 +4,16 @@ import base64
 import time
 import hashlib
 import socket
+
+from cryptography import x509
 from cryptography.fernet import Fernet
-from network import ONLINE_USERS
 from contacts import load_contacts
+from network import list_online_contacts
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
 
 CHUNK_SIZE = 4096
-FILE_PORT = 50001
+FILE_PORT = 50002
 
 def generate_file_key():
     return Fernet.generate_key()
@@ -36,7 +40,7 @@ def compute_hash(file_path):
     return sha.hexdigest()
 
 # read file and encrypt it with gen key, split into chunks, and send each chunk to recipient id
-def send_file(session, recipient_ip, file_path):
+def send_file(session, recipient_ip, file_path, recipient_cert_bytes):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     file_key = generate_file_key()
@@ -49,8 +53,9 @@ def send_file(session, recipient_ip, file_path):
     start_packet = {
         "file_id": file_id,
         "start": True,
-        "key": base64.b64encode(file_key).decode(),
-        "sender": session["email"]
+        "key": encrypt_file_key(file_key, recipient_cert_bytes),
+        "sender": session["email"],
+        "filename": os.path.basename(file_path)
     }
     sock.sendto(json.dumps(start_packet).encode(), (recipient_ip, FILE_PORT))
 
@@ -87,21 +92,22 @@ def start_file_receiver():
         data, addr = sock.recvfrom(65535)
         try:
             packet = json.loads(data.decode())
-            print(" packet recieved")
+            print(" packet received")
             if packet.get("start"):
                 file_id = packet["file_id"]
                 RECEIVED_FILES[file_id] = {
                     "chunks": {},
                     "hash": None,
                     "sender": packet["sender"],
-                    "key": packet["key"]
+                    "key": packet["key"],
+                    "filename": packet.get("filename", f"received_{file_id}")
                 }
                 continue
 
             if packet.get("end"):
                 file_id = packet["file_id"]
-                print(f"[+] Finished recieving file from {RECEIVED_FILES[file_id]['sender']}")
-                output_path = f"recieved_{file_id}.bin"
+                print(f"[+] Finished receiving file from {RECEIVED_FILES[file_id]['sender']}")
+                output_path = f"data/{RECEIVED_FILES[file_id]['filename']}"
                 assemble_file(file_id, output_path)
                 continue
             
@@ -126,41 +132,65 @@ def assemble_file(file_id, output_path):
     data = RECEIVED_FILES[file_id]
     chunks = data["chunks"]
     ordered = [chunks[k] for k in sorted(chunks.keys())]
-    full_encrypted = b"".join(ordered)
-    
-    key = base64.b64decode(data["key"])
+
+    key = decrypt_file_key(data["key"])
     cipher = Fernet(key)
 
-    decrypted = cipher.decrypt(full_encrypted)
+    decrypted = b"".join(cipher.decrypt(chunk) for chunk in ordered)
 
     sha = hashlib.sha256(decrypted).hexdigest()
-
     if sha != data["hash"]:
         print("[-] File corrupted or tampered!")
         return
     
-    with open(output_path, "wb") as f:
-        f.write(decrypted)
+    with open(output_path, "wb") as file:
+        file.write(decrypted)
     
     print("[+] File received successfully")
 
 # converts a recipient email into an ip so you can type in the email to send a file
 def send_file_interface(session, recipient_email, file_path):
-    recipient_ip = resolve_ip_by_email(recipient_email)
-    if not recipient_ip:
-        print("[-] User not online")
+    contacts = load_contacts(session)
+    online = list_online_contacts(session, contacts)
+    recipient = next((u for u in online if u["email"] == recipient_email), None)
+    if not recipient:
+        print("[-] User not online or not a mutual contact")
         return
-    
-    send_file(session, recipient_ip, file_path)
+    send_file(session, recipient["ip"], file_path, recipient["cert"])
 
 def start_receiver():
     import threading
     t = threading.Thread(target=start_file_receiver, daemon=True)
     t.start()
 
-# looks up the online user list to find the correct ip address for an email
-def resolve_ip_by_email(email):
-    for user in ONLINE_USERS:
-        if user["email"] == email:
-            return user.get("ip")
-    return None
+def encrypt_file_key(file_key, recipient_cert_bytes):
+    cert = x509.load_pem_x509_certificate(recipient_cert_bytes)
+    public_key = cert.public_key()
+    encrypted_key = public_key.encrypt(
+        file_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+    return base64.b64encode(encrypted_key).decode()
+
+def decrypt_file_key(encrypted_key_b64):
+    from auth import load_user
+    from cryptography.hazmat.primitives.serialization import load_pem_private_key
+    user_info = load_user()
+    if isinstance(user_info, list):
+        user_info = user_info[0]
+    with open(user_info["key"], "rb") as f:
+        private_key = load_pem_private_key(f.read(), password=None)
+    encrypted_key = base64.b64decode(encrypted_key_b64)
+    return private_key.decrypt(
+        encrypted_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+

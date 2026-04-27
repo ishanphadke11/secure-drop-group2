@@ -2,6 +2,7 @@ import json
 import hashlib
 import os
 from crypto import generate_key_pair
+import getpass
 
 # function checks if a user is already registered
 def is_registered():
@@ -25,8 +26,8 @@ def collect_user_info():
     email = input("Enter Email Address: ").strip()
 
     while True:
-        password = input("Enter Password: ").strip()
-        confirmed_password = input("Re-enter Password: ")
+        password = getpass.getpass("Enter Password: ")
+        confirmed_password = getpass.getpass("Re-enter Password: ")
 
         if password == confirmed_password:
             print("Passwords Match.")
@@ -55,7 +56,8 @@ def register_user():
             print("A user with that email already exists.")
             return
 
-    user_info["password_hash"] = hash_password(user_info.pop("password"))
+    plain_password = user_info.pop("password")
+    user_info["password_hash"] = hash_password(plain_password)
     key, cert = generate_key_pair(user_info["email"], user_info["name"])
     user_info["key"] = key
     user_info["cert"] = cert
@@ -64,6 +66,12 @@ def register_user():
     users.append(user_info)
     save_user(users)
     print("User Registered.")
+    return {
+        "name": user_info["name"],
+        "email": user_info["email"],
+        "password": plain_password,
+        "encryption_salt": user_info["encryption_salt"]
+    }
 
 # function takes plaintext password and hashes it
 def hash_password(password):
@@ -83,7 +91,7 @@ def verify_password(password, stored_password):
 # function to collect login infromation and authenticate user by verifying password
 def login_user():
     email = input("Enter Email Address: ")
-    password = input("Enter Password: ")
+    password = getpass.getpass("Enter Password: ")
 
     users = load_user()
 

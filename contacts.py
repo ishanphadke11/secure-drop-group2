@@ -4,7 +4,7 @@ import os
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
-from network import discover_users
+from network import list_online_contacts
 
 # function takes plaintext password and encryption salt for user to generate aes key. This key is
 # used to encrypt/decrpt contacts.json using Fernet
@@ -40,21 +40,15 @@ def add_contacts(session):
     email = input("Enter Contact Email: ")
 
     contacts = load_contacts(session)
+    contacts = [c for c in contacts if c["email"] != email]
     contacts.append({"name": name, "email": email})
     save_contacts(contacts, session)
     print("Contact Added")
 
 def list_contacts(session):
     contacts = load_contacts(session)
-    online_users = discover_users(session, contacts)
-    valid = []
+    online_users = list_online_contacts(session, contacts)
 
-    for user in online_users:
-        for contact in contacts:
-            if contact["email"] == user["email"]:
-                if session["email"] in user.get("contacts", []):
-                    valid.append(user)
-
-    print("The following contacts are online:")
-    for v in valid:
-        print(f"* {v['name']} <{v['email']}>")
+    print("The following contacts are online: ")
+    for contact in online_users:
+        print(f"* {contact['name']} <{contact['email']}>")

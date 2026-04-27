@@ -7,3 +7,6 @@ __pycache__/
 *_backup.py
 recieved_*.bin
 received_*.bin
+test-ca/
+test-cb/
+test-cc/

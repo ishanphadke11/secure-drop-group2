@@ -23,6 +23,7 @@ def generate_key_pair(email, name):
     cert = (
         x509.CertificateBuilder().subject_name(subject).issuer_name(subject).public_key(private_key.public_key())
         .serial_number(x509.random_serial_number()).not_valid_before(datetime.now(timezone.utc))
+
         .not_valid_after(datetime.now(timezone.utc)+ timedelta(days=365))
         .sign(private_key, hashes.SHA256())
     )
